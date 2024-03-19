@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Network Graph</title>
+  <style>
+    #canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="13000" height="13000"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let graphData;
+
+
+    const loadGraphData = async () => {
+        const response = await fetch("big_graph_data.json");
+        graphData = await response.json();
+        graphData = scaleGraphData(graphData);
+        renderGraph(graphData, null);
+      };
+
+      const scaleGraphData = (graphData) => {
+        const { nodes, links } = graphData;
+        const scaledNodes = nodes.map((node) => {
+          const { x, y, id, cluster } = node;
+          const scaledX = ((x + 1.1) * 7000);
+          const scaledY = ((y + 1.1) * 7000);
+          return { x: scaledX, y: scaledY, id, cluster };
+        });
+        return { nodes: scaledNodes, links };
+      };
+
+    const renderGraph = (graphData, focusedNode) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+      const { nodes, links } = graphData;
+      const nodeRadius = 30;
+
+      // Draw links
+      links.forEach((link) => {
+        const { source, target, color, weight } = link;
+        const sourceNode = nodes.find((node) => node.id === source);
+        const targetNode = nodes.find((node) => node.id === target);
+        ctx.beginPath();
+        ctx.moveTo(sourceNode.x, sourceNode.y);
+        ctx.lineTo(targetNode.x, targetNode.y);
+        if (focusedNode && (focusedNode.id === source || focusedNode.id === target)) {
+            ctx.strokeStyle = 'black'; // Focused edge color
+            ctx.lineWidth = weight / 10; // Increase line width for focused edges
+        } else if (focusedNode) {
+            ctx.strokeStyle = color; // Unfocused edge color
+            ctx.lineWidth = weight / 1000;
+        }  else {
+                ctx.strokeStyle = color; // Unfocused edge color
+                ctx.lineWidth = weight / 100;
+        }
+        ctx.stroke();
+        ctx.closePath();
+      });
+      // Draw nodes
+      nodes.forEach((node) => {
+        const { x, y, id, cluster } = node;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = getClusterColor(cluster);
+        if (focusedNode && focusedNode.id === id) {
+          ctx.shadowColor = 'black';
+          ctx.shadowBlur = 20;
+        } else if (focusedNode) {
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+        ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(id, node.x, node.y);
+        ctx.closePath();
+      });
+    }
+
+
+    const handleNodeClick = async(event, nodes) => {
+        const response = await fetch("big_graph_data.json");
+        graphData = await response.json();
+        graphData = scaleGraphData(graphData);
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const node = nodes.find((node) => {
+            const { x: nodeX, y: nodeY } = node;
+            const distance = Math.sqrt(Math.pow(x - nodeX, 2) + Math.pow(y - nodeY, 2));
+            return distance <= 30;
+        });
+        focusedNode = node;
+        renderGraph(graphData, focusedNode);
+        console.log("hi")
+    };
+    canvas.addEventListener('click', (event) => handleNodeClick(event, graphData.nodes));
+
+    const getClusterColor = (cluster) => {
+        const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'];
+        return colors[cluster % colors.length];
+    };
+
+
+    loadGraphData();
+  </script>
+</body>
+</html>
