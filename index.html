@@ -38,7 +38,7 @@
     const renderGraph = (graphData, focusedNode) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
       const { nodes, links } = graphData;
-      const nodeRadius = 30;
+      const nodeRadius = 15;
 
       // Draw links
       links.forEach((link) => {
@@ -69,7 +69,7 @@
         ctx.fillStyle = getClusterColor(cluster);
         if (focusedNode && focusedNode.id === id) {
           ctx.shadowColor = 'black';
-          ctx.shadowBlur = 20;
+          ctx.shadowBlur = 10;
         } else if (focusedNode) {
           ctx.shadowColor = 'transparent';
           ctx.shadowBlur = 0;
@@ -103,9 +103,14 @@
     };
     canvas.addEventListener('click', (event) => handleNodeClick(event, graphData.nodes));
 
+    newcolors = [];
+      for (let i = 0; i < 200; i++) {
+        const color = '#' + Math.floor(Math.random()*16777215).toString(16); // Generates a random hex color
+        newcolors.push(color);
+      }
+
     const getClusterColor = (cluster) => {
-        const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'];
-        return colors[cluster % colors.length];
+      return newcolors[cluster % newcolors.length];
     };
 
 
